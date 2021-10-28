@@ -37,7 +37,7 @@ local_tzname = local_tz.tzname(local_now)
 if len(sys.argv) > 1:
     hours = float(sys.argv[1])
 else:
-    hours = 1000
+    hours = 8
     
 infilename = '/home/pugsley/code/AC/homedata.log'  
     
@@ -292,6 +292,7 @@ for item in cools3:
 for item in heats3:
     ax3.axvspan(item[0], item[1], alpha=0.1, color='red')
 
+plt.savefig('temp.jpg', bbox_inches='tight')
 
 
 # Humidity plot
@@ -323,6 +324,7 @@ ax.legend(['Outside Tag {:.0f}'.format(df['outhum'][-1]),\
             "Morgan's Door Tag {:.0f}".format(df['wt8h'][-1]),\
             "Crawlspace Tag {:.0f}".format(df['wt9h'][-1])],\
           loc='lower left')
+plt.savefig('hum.jpg', bbox_inches='tight')
 plt.show()
 
 # TAGS as of 8/18/2021 are
