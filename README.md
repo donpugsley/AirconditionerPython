@@ -8,7 +8,8 @@ Working directory is /home/pugsley/code/AC
 homedatalogger.py runs every 10 minutes using a CRON job, scraping house AC,
 temperature, and humidity data and appending it to homedata.log.
 
-# m h  dom mon dow   command
+Example cron for 10 minute intervals:
+\# m h dom mon dow   command
 */10 * * * * /home/pugsley/anaconda3/bin/python /home/pugsley/homedatalogger.py >> /home/pugsley/hdl.log
 
 The data source for AC info is the upstairs MyInfinity thermostat, set
