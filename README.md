@@ -1,11 +1,9 @@
 Pugsley HomeDataLogger package
 =======================================
 
-This code uses a Carrier WIFI-enabled thermostat and a set of WirelessTag temperature/humidity monitors to produce a data log of home temp/hum/AC status over time.  Plots like these can be produced on request:
+This code uses a Carrier WIFI-enabled thermostat and a set of WirelessTag temperature/humidity monitors to produce a data log of home temp/hum/AC status over time.  Plots like these, showing AC settings and active cool/heat times, can be produced on request for any interval in the database:
 
-![temp.jpg]
-
-![hum.jpg]
+![temp.jpg](temp.jpg)
 
 homedatalogger.py runs every 10 minutes using a CRON job, scraping house AC,
 temperature, and humidity data and appending it to homedata.log.
