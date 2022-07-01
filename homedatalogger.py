@@ -16,8 +16,9 @@ import requests
 from time import gmtime, strftime
 import xmltodict
 import numpy as np
+from subprocess import call
 
-# Location of Infinitude server
+# Location of Infinitude server - running on Synology inside Docker container
 INFINITUDE_HOST = "192.168.1.202"
 INFINITUDE_PORT = "3000"
 
@@ -190,6 +191,7 @@ if outsidetemperature is None: outsidetemperature = 'None'
 writelog('{}: ops {}, cfg {}, mode {}, z {}/{}/{}, zcon {}/{}/{}, zhrc {}<{}<{}/{}<{}<{}/{}<{}<{}, zen {}/{}/{}, zhum {}/{}/{}, zfan {}/{}/{}, zdamp {}/{}/{}, outside {}:{:.1f}/{:.1f}, TAGS: {}'.format\
         (nowstr,ops,cfg,mode,zn0,zn1,zn2,zc0,zc1,zc2,zh0,zr0,zl0,zh1,zr1,zl1,zh2,zr2,zl2,ze0,ze1,ze2,zu0,zu1,zu2,zf0,zf1,zf2,zd0,zd1,zd2,outsidetime,outsidetemperature,outsidehumidity,tagstr))
 
+call("/home/pugsley/anaconda3/bin/python" + " /home/pugsley/plot-homelogger-data.py", shell=True)
         
 
 

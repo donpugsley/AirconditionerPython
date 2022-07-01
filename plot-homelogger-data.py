@@ -36,8 +36,10 @@ local_tzname = local_tz.tzname(local_now)
 
 if len(sys.argv) > 1:
     hours = float(sys.argv[1])
+    INTERACTIVE = True
 else:
     hours = 8
+    INTERACTIVE = False
     
 infilename = '/home/pugsley/code/AC/homedata.log'  
     
@@ -73,6 +75,7 @@ restr10tag = r'.*INFO:root:(.*)-\d\d:\d\d: ops (.*?), cfg (.*?), mode (.*?), z (
 # This format will match the full ISO 8601 TZ... just need to avoid the final :
 # restr10tag = r'.*INFO:root:(.*): ops (.*?), cfg (.*?), mode (.*?), z (.*?)/(.*?)/(.*?), zcon (.*?)/(.*?)/(.*?), zhrc (.*?)<(.*?)<(.*?)/(.*?)<(.*?)<(.*?)/(.*?)<(.*?)<(.*?), zen (.*?)/(.*?)/(.*?), zhum (.*?)/(.*?)/(.*?), zfan (.*?)/(.*?)/(.*?), zdamp (\d+)/(\d+)/(\d+), outside (.*?)[+-]\d\d:\d\d:(.*?)/(.*?), TAGS: (.*?): (.*?) F, (.*?) % RH, (.*?): (.*?) F, (.*?) % RH, (.*?): (.*?) F, (.*?) % RH, (.*?): (.*?) F, (.*?) % RH, (.*?): (.*?) F, (.*?) % RH, (.*?): (.*?) F, (.*?) % RH, (.*?): (.*?) F, (.*?) % RH, (.*?): (.*?) F, (.*?) % RH, (.*?): (.*?) F, (.*?) % RH, (.*?): (.*?) F, (.*?) % RH, '
 
+print("Reading...")
 f = open(infilename, 'r'); 
 for linenum,line in enumerate(f): # fileinput.input():
     ldat=re.match(restr10tag, line)
@@ -80,7 +83,7 @@ for linenum,line in enumerate(f): # fileinput.input():
         timestr=ldat.group(1); 
         thistime = dateutil.parser.isoparse(timestr) # Parse string to get datetime
         thistime = thistime.astimezone(local_tz) # Make TZ-aware as local time
-        thistime = thistime - datetime.timedelta(hours=4) # Correct for the hardcoded -5, may break when we go to EDT
+        thistime = thistime - datetime.timedelta(hours=5) # Correct for the hardcoded -5, may break when we go to EDT
 
         # Collect the data for this line into arrays
         t.append(thistime)
@@ -113,7 +116,7 @@ for linenum,line in enumerate(f): # fileinput.input():
 f.close()
 
 # Put the collected arrays into a dataframe
-
+print("Framing...")
 df = pd.DataFrame({'Time':t, 'ops':ops, 'cfg':cfg, 'mode':mode,\
                    'zn0':zn0, 'zn1':zn1, 'zn2':zn2,\
                    'zc0':zc0, 'zc1':zc1, 'zc2':zc2,\
@@ -141,6 +144,10 @@ outtemp = wt0t; outhum = wt0h;
 # Set the time column as the index
 df.set_index('Time', inplace=True)
 
+# Ensure we are monotonically increasing
+print("Sorting...")
+df.sort_index(inplace=True)
+
 # Convert to local time
 # Not necessary ... df = df.tz_localize(local_tz)
 
@@ -150,12 +157,14 @@ now = now.replace(tzinfo=local_tz)
 then = now - datetime.timedelta(hours=hours)
 
 # Debuggering printout... timezones are a pain in the ass
-# earliest = df.head(1).index
-# latest = df.tail(1).index
-# print("Dataset ends {0}, requested {1} to {2}".format\
-#       (latest.format()[0], str(then), str(now)))
+earliest = df.head(1).index
+latest = df.tail(1).index
+print("Dataset ends {0}, requested {1} to {2}".format\
+       (latest.format()[0], str(then), str(now)))
 
-df = df[then:]  
+nearnow = min(now,latest)
+df = df.loc[ df.index > then ]
+#df = df[then:nearnow]  
 
 # Iterate through and find on/off points... we need to color the
 # area between each on-off pair.  
@@ -238,19 +247,18 @@ ax1.xaxis_date(tz=local_tzname)
 ax2.xaxis_date(tz=local_tzname)    
 ax3.xaxis_date(tz=local_tzname)    
 
-# Zone: 2nd floor, tags 7 (Guest), 4 (Bathroom), 5 and 3 (Chris)
-temps = ['outtemp', 'zr0', 'wt7t', 'wt4t','wt3t']
+# Zone: 2nd floor, tags 7 (Guest), 4 (Bathroom), 3 (Chris' Room) ... 5 Chris Window is OOR
+temps = ['zr0', 'wt7t', 'wt4t','wt3t'] # 'outtemp', removed
 ax1.plot(df[temps],marker='.')
 ax1.fill_between(df.index,[x-5 for x in df['zh0']],df['zh0'],alpha=0.2,color='red')
 ax1.fill_between(df.index,[x+5 for x in df['zl0']],df['zl0'],alpha=0.2,color='blue')
 ax1.set_ylabel('Temperature')
 ax1.title.set_text('2nd Floor Hall Thermostat Zone')
-ax1.legend(['Outside {:.0f}'.format(df['outtemp'][-1]),\
-            'Hall Thermostat {:.0f}'.format(df['zr0'][-1]),\
+# 'Outside {:.0f}'.format(df['outtemp'][-1]),\
+ax1.legend(['Hall Thermostat {:.0f}'.format(df['zr0'][-1]),\
             'Guest Room Tag {:.0f}'.format(df['wt7t'][-1]),\
             "Upstairs Bathroom Tag {:.0f}".format(df['wt4t'][-1]),\
-            "Chris's Room Tag {:.0f}".format(df['wt3t'][-1]),\
-            "Chris's Window Tag {:.0f}".format(df['wt5t'][-1])],\
+            "Chris's Room Tag {:.0f}".format(df['wt3t'][-1])],\
            loc='lower left')
 for item in cools1:
     ax1.axvspan(item[0], item[1], alpha=0.1, color='blue')
@@ -258,14 +266,13 @@ for item in heats1:
     ax1.axvspan(item[0], item[1], alpha=0.1, color='red')
 
 # Zone: Living room, tag 9 (Crawlspace), 6 (Garage)
-temps = ['outtemp', 'zr1', 'wt9t', 'wt6t']
+temps = ['zr1', 'wt9t', 'wt6t']
 ax2.plot(df[temps],marker='.')
 ax2.fill_between(df.index,[x-5 for x in df['zh1']],df['zh1'],alpha=0.2,color='red')
 ax2.fill_between(df.index,[x+5 for x in df['zl1']],df['zl1'],alpha=0.2,color='blue')
 ax2.set_ylabel('Temperature')
 ax2.title.set_text('Living Room Thermostat Zone')
-ax2.legend(['Outside {:.0f}'.format(df['outtemp'][-1]),\
-            'Living Room Thermostat {:.0f}'.format(df['zr1'][-1]),\
+ax2.legend(['Living Room Thermostat {:.0f}'.format(df['zr1'][-1]),\
             'Crawlspace {:.0f}'.format(df['wt9t'][-1]),\
             'Garage Tag {:.0f}'.format(df['wt6t'][-1])],\
             loc='lower left')
@@ -275,15 +282,14 @@ for item in heats2:
     ax2.axvspan(item[0], item[1], alpha=0.1, color='red')
 
 # Zone: Master Bedroom, tags 2 (Morgan) and 1 (MBR)
-temps = ['outtemp', 'zr2', 'wt2t', 'wt1t']
+temps = ['zr2', 'wt2t', 'wt1t']
 ax3.plot(df[temps],marker='.')
 ax3.fill_between(df.index,[x-5 for x in df['zh2']],df['zh2'],alpha=0.2,color='red')
 ax3.fill_between(df.index,[x+5 for x in df['zl2']],df['zl2'],alpha=0.2,color='blue')
 ax3.set_ylabel('Temperature')
 ax3.set_xlabel("Time")
 ax3.title.set_text('Master Bedroom Thermostat Zone')
-ax3.legend(['Outside {:.0f}'.format(df['outtemp'][-1]),\
-            'Master Bedroom Thermostat {:.0f}'.format(df['zr2'][-1]),\
+ax3.legend(['Master Bedroom Thermostat {:.0f}'.format(df['zr2'][-1]),\
             "Morgan's Room Tag {:.0f}".format(df['wt2t'][-1]),\
             'Master Bedroom Tag {:.0f}'.format(df['wt1t'][-1])],\
             loc='lower left')
@@ -303,15 +309,14 @@ ax.xaxis_date(tz=local_tzname)
 
 plt.title('CFG: {} Now: {} Hall:{}/LR:{}/MBR:{} Fan {}/{}/{} Damper {}/{}/{} (0 is closed)'.format\
              (cfg[-1],mode[-1],zc0[-1],zc1[-1],zc2[-1],zf0[-1],zf1[-1],zf2[-1],zd0[-1],zd1[-1],zd2[-1]))
-hums = ['outhum', 'zu0', 'zu1', 'zu2', 'wt1h','wt2h','wt3h','wt4h','wt5h','wt6h','wt7h','wt8h','wt9h']
+hums = ['zu0', 'zu1', 'zu2', 'wt1h','wt2h','wt3h','wt4h','wt5h','wt6h','wt7h','wt8h','wt9h']
 ax.plot(df[hums],marker='.')
 #ax3.fill_between(df.index,[x-5 for x in df['zh2']],df['zh2'],alpha=0.2,color='red')
 #ax3.fill_between(df.index,[x+5 for x in df['zl2']],df['zl2'],alpha=0.2,color='blue')
 ax.set_ylabel('% Humidity')
 ax.set_xlabel("Time")
 ax.title.set_text('Humidity vs Time for all sensors')
-ax.legend(['Outside Tag {:.0f}'.format(df['outhum'][-1]),\
-            '2nd Floor Hall Thermostat {:.0f}'.format(df['zu0'][-1]),\
+ax.legend(['2nd Floor Hall Thermostat {:.0f}'.format(df['zu0'][-1]),\
             'Living Room Thermostat {:.0f}'.format(df['zu1'][-1]),\
             'Master Bedroom Thermostat {:.0f}'.format(df['zu2'][-1]),\
             "Master Bedroom Tag {:.0f}".format(df['wt1h'][-1]),\
@@ -325,7 +330,9 @@ ax.legend(['Outside Tag {:.0f}'.format(df['outhum'][-1]),\
             "Crawlspace Tag {:.0f}".format(df['wt9h'][-1])],\
           loc='lower left')
 plt.savefig('hum.jpg', bbox_inches='tight')
-plt.show()
+
+if INTERACTIVE:
+    plt.show()
 
 # TAGS as of 8/18/2021 are
 # 0 Outdoors
