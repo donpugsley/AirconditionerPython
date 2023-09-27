@@ -65,30 +65,13 @@ def getlocalweather(): # National Weather Service station KGAI is Montgomery Cou
 def getwirelesstagdata(): # Get current temp and humidity from home wirelesstags using site API
     """Return latest temp and humidity for all three zones"""
     URL = 'https://my.wirelesstag.net/ethAccount.asmx/SignInEx'
-    PARAMS = {"email":'WirelessTag-tt@snkmail.com', "password":'5h0JPdnHsYxv'}
+    PARAMS = {"email":'WirelessTag-tt@snkmail.com', "password":'KbyBj649vGp3EnWMTna'}
     req = requests.get(url=URL, params=PARAMS)
     if req.status_code != 200: # Badness
         print('{} GET'.format(req.status_code))
-        sys.exit(req.status_code)
+        # sys.exit(req.status_code)
     jar = req.cookies # Save auth cookie for use in following requests
         
-    # URL = 'https://my.wirelesstag.net/ethAccount.asmx/GetTagManagers'
-    # tm = requests.get(url=URL,cookies=jar)
-    # if tm.status_code != 200: # Badness
-    #     print('{} GET'.format(tm.status_code))
-    #     sys.exit(tm.status_code)
-
-    # """ I added a second tag manager and that broke the code! """
-    # tmdata = xmltodict.parse(tm.text)
-    # mytagmac0 = tmdata['ArrayOfTagManagerEntry']['TagManagerEntry'][0]['mac']
-    # mytagmac1 = tmdata['ArrayOfTagManagerEntry']['TagManagerEntry'][1]['mac']
-
-    # URL = 'https://my.wirelesstag.net/ethAccount.asmx/SelectTagManager'
-    # stm = requests.get(url=URL,cookies=jar,params={"mac":mytagmac0})
-    # if stm.status_code != 200: # Badness
-    #     print('{} GET'.format(stm.status_code))
-    #     sys.exit(stm.status_code)
-    
     URL = 'https://my.wirelesstag.net/ethClient.asmx/GetTrends'
     data = requests.get(url=URL,cookies=jar,params={"allTagManagers":"true"})
     if data.status_code != 200: # Badness
@@ -180,7 +163,10 @@ wtd = getwirelesstagdata()
 tagstr=''
 for tag in wtd:
     degf = float(tag['temperature']['double'][-1])*(9/5)+32
-    rhum = float(tag['rh']['float'][-1])
+    if tag.get('rh')==None: # Non-ALS tags!
+        rhum = 0.0;
+    else:
+        rhum = float(tag['rh']['float'][-1])
     name = tag['name']
     tagstr = tagstr+'{}: {:.1f} F, {:.1f} % RH, '.format(name,degf,rhum)
 
@@ -192,7 +178,3 @@ writelog('{}: ops {}, cfg {}, mode {}, z {}/{}/{}, zcon {}/{}/{}, zhrc {}<{}<{}/
         (nowstr,ops,cfg,mode,zn0,zn1,zn2,zc0,zc1,zc2,zh0,zr0,zl0,zh1,zr1,zl1,zh2,zr2,zl2,ze0,ze1,ze2,zu0,zu1,zu2,zf0,zf1,zf2,zd0,zd1,zd2,outsidetime,outsidetemperature,outsidehumidity,tagstr))
 
 call("/home/pugsley/anaconda3/bin/python" + " /home/pugsley/plot-homelogger-data.py", shell=True)
-        
-
-
-
