@@ -244,7 +244,7 @@ ax.xaxis_date(tz=local_tzname)
 
 plt.title('CFG: {} Now: {} Hall:{}/LR:{}/MBR:{} Fan {}/{}/{} Damper {}/{}/{} (0 is closed)'.format\
              (cfg[-1],mode[-1],zc0[-1],zc1[-1],zc2[-1],zf0[-1],zf1[-1],zf2[-1],zd0[-1],zd1[-1],zd2[-1]))
-hums = ['zu0', 'zu1', 'zu2','Master Bedroomhum', 'Garagehum', 'Guest Roomhum', "Cristopher's Roomhum", "Morgan's Roomhum", 'Upstairs Bathroomhum', 'Crawlspacehum']
+hums = ['zu0', 'zu1', 'zu2','Master Bedroomhum', "Morgan's Roomhum", "Cristopher's Roomhum", 'Upstairs Bathroomhum', 'Garagehum', 'Guest Roomhum', 'Crawlspacehum']
 ax.plot(df[hums],marker='.')
 ax.set_ylabel('% Humidity')
 ax.set_xlabel("Time")
