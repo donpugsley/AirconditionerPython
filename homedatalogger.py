@@ -65,7 +65,7 @@ def getlocalweather(): # National Weather Service station KGAI is Montgomery Cou
 def getwirelesstagdata(): # Get current temp and humidity from home wirelesstags using site API
     """Return latest temp and humidity for all three zones"""
     URL = 'https://my.wirelesstag.net/ethAccount.asmx/SignInEx'
-    PARAMS = {"email":'WirelessTag-tt@snkmail.com', "password":''}
+    PARAMS = {"email":'XXXXXX', "password":'XXXXXX'}
     req = requests.get(url=URL, params=PARAMS)
     if req.status_code != 200: # Badness
         print('{} GET'.format(req.status_code))

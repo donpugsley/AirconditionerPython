@@ -12,7 +12,7 @@ import requests
 import xmltodict
 
 URL = 'https://my.wirelesstag.net/ethAccount.asmx/SignInEx'
-PARAMS = {"email":'WirelessTag-tt@snkmail.com', "password":'ZksPr%&62HECgprxV'}
+PARAMS = {"email":'XXXXXX', "password":'XXXXXX'}
 req = requests.get(url=URL, params=PARAMS)
 if req.status_code != 200: # Badness
     print('{} GET'.format(req.status_code))
